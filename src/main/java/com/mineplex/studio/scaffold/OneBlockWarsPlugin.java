@@ -17,6 +17,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 public class OneBlockWarsPlugin extends JavaPlugin {
     @Getter
+    private static OneBlockWars game;
     private LobbyModule lobbyModule;
     private MineplexGameModule gameModule;
 
@@ -40,7 +41,8 @@ public class OneBlockWarsPlugin extends JavaPlugin {
         gameModule.setGameCycle(new GameCycle() {
             @Override
             public MineplexGame createNextGame() {
-                return new OneBlockWars(OneBlockWarsPlugin.this);
+                game = new OneBlockWars(OneBlockWarsPlugin.this);
+                return game;
             }
 
             @Override

@@ -1,0 +1,16 @@
+# DO NOT EDIT: this project ID is unique to your repository and should not be changed
+projectId: 66f99e6c3803fe36096edb41
+
+# CONFIGURATION: the following properties are used to configure the studio and can be edited directly
+
+namespaceId: 66f99e6c3803fe36096edb41 # you can change this to a studio name or other shared namespace
+
+game:
+  name: Scaffold
+
+matchmaker:
+  allocationMode: STATIC # can be STATIC or DYNAMIC
+  maxReplicas: 4 # only can be set when allocationMode is STATIC
+  minPlayers: 4
+  maxPlayers: 10
+  allowPlayerBackfill: true # can be true or false

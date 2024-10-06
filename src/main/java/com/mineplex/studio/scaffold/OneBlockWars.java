@@ -11,9 +11,9 @@ import com.mineplex.studio.sdk.modules.game.mechanics.spectator.SpectatorMechani
 import com.mineplex.studio.sdk.modules.game.mechanics.spectator.SpectatorStateHandler;
 import com.mineplex.studio.sdk.modules.world.MineplexWorld;
 import com.mineplex.studio.sdk.util.selector.BuiltInGameStateSelector;
-//import com.game.listeners.started.PlayerDeathListener;
-//import es.game.listeners.started.PlayerQuitListener;
-//import es.game.listeners.started.PlayerStateChangeListener;
+import com.mineplex.studio.scaffold.Pre_StartPlayerJoinListener;
+import com.mineplex.studio.scaffold.StartedPlayerJoinListener;
+
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -64,7 +64,7 @@ public class OneBlockWars implements SingleWorldMineplexGame {
 
     private final int MAX_PLAYERS = 4;
 
-    //Called when GameState is set to a state that isReady()
+    ///Called when GameState is set to a state that isReady()
     private void onPreStart() {
         for (Player player : Bukkit.getOnlinePlayers()) {
             setPlayerState(player, BuiltInPlayerState.ALIVE);
@@ -72,7 +72,7 @@ public class OneBlockWars implements SingleWorldMineplexGame {
         tryStart(false);
     }
 
-    //Called when GameState is set to a state that isInProgress()
+    ///Called when GameState is set to a state that isInProgress()
     private void onStart() {
         ArrayList<Location> spawns = new ArrayList<>(getGameWorld().getDataPoints("SPAWN"));
 
@@ -157,30 +157,31 @@ public class OneBlockWars implements SingleWorldMineplexGame {
     @Override
     public void setup() {
         log.info("attemped to setup");
-     //   stateHelperMechanic =
-         //       gameMechanicFactory.construct(GameStateListenerHelperMechanic.class);
-       // stateHelperMechanic
-               // .registerRunnable(this::onPreStart,
-             //           BuiltInGameStateSelector.ready())
-           //     .registerSingleRunnable(this::onStart,
-         //               BuiltInGameStateSelector.inProgress())
-       //         .registerSingleRunnable(this::onEnded,
-      //                  BuiltInGameStateSelector.ended())
-    //            .registerEventListener(
-  //                      new es.game.listeners.pre_start.PlayerJoinListener(this),
-    //                    BuiltInGameStateSelector.ready())
-      //          .registerEventListener(
-        //                new PlayerDeathListener(this),
-          //              BuiltInGameStateSelector.inProgress())
-            //    .registerEventListener(
-              //          new es.game.listeners.started.PlayerJoinListener(this),
-                //        BuiltInGameStateSelector.inProgress())
-      //          .registerEventListener(
-        //                new PlayerQuitListener(this),
-          //              BuiltInGameStateSelector.inProgress())
-            //    .registerEventListener(
-            //            new PlayerStateChangeListener(this),
-             //           BuiltInGameStateSelector.inProgress());
+        stateHelperMechanic =
+                gameMechanicFactory.construct(GameStateListenerHelperMechanic.class);
+        stateHelperMechanic
+                .registerRunnable(this::onPreStart,
+                        BuiltInGameStateSelector.ready())
+                .registerSingleRunnable(this::onStart,
+                        BuiltInGameStateSelector.inProgress())
+                .registerSingleRunnable(this::onEnded,
+                        BuiltInGameStateSelector.ended())
+                .registerEventListener(
+                        new com.mineplex.studio.scaffold.Pre_StartPlayerJoinListener(), //used to be (this)
+                        BuiltInGameStateSelector.ready())
+                .registerEventListener(
+                        new PlayerDeathListener(this),
+                        BuiltInGameStateSelector.inProgress())
+                .registerEventListener(
+                        new StartedPlayerJoinListener(), //used to be (this)
+                        BuiltInGameStateSelector.inProgress())
+                .registerEventListener(
+                        new PlayerQuitListener(this),
+                        BuiltInGameStateSelector.inProgress())
+                .registerEventListener(
+                        new PlayerStateChangeListener(this),
+                        BuiltInGameStateSelector.inProgress());
+
 
         spectatorMechanic = gameMechanicFactory.construct(SpectatorMechanic.class);
         spectatorMechanic
@@ -217,7 +218,7 @@ public class OneBlockWars implements SingleWorldMineplexGame {
 
         gameWorldSelectorMechanic = this.gameMechanicFactory.construct(GameWorldSelectorMechanic.class);
 
-        gameWorldSelectorMechanic.setFilter(name -> !"lobby".equalsIgnoreCase(name));
+  //      gameWorldSelectorMechanic.setFilter(name -> !"lobby".equalsIgnoreCase(name));
         gameWorldSelectorMechanic.setup(this);
 
         stateHelperMechanic.setup(this);
@@ -260,8 +261,17 @@ public class OneBlockWars implements SingleWorldMineplexGame {
             return true;
         }
         return false;
+
     }
+
+    /**
+     * Gets the {@link MineplexWorld} this {@link MineplexGame} is located within.
+     *
+     * @return the {@link MineplexWorld} this {@link MineplexGame} is located within
+     */
+
 }
+
 
 
 //[01:55:06 ERROR]: [ModernPluginLoadingStrategy] Could not load plugin 'plugin.jar' in folder 'plugins'
