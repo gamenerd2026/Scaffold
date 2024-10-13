@@ -27,7 +27,10 @@ import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryCloseEvent;
+import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -36,6 +39,7 @@ import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -68,6 +72,8 @@ public class OneBlockWars implements SingleWorldMineplexGame {
     private final int MIN_PLAYERS = 3;
 
     private final int MAX_PLAYERS = 4;
+    private boolean isCountdownActive = false;
+    private Map<Player, Location> playerStartLocations = new HashMap<>();
 
     ///Called when GameState is set to a state that isReady()
     private void onPreStart() {
@@ -88,23 +94,66 @@ public class OneBlockWars implements SingleWorldMineplexGame {
             adjustSpawnLocation(spawn, getWorldCenter());
             player.teleport(spawn, PlayerTeleportEvent.TeleportCause.PLUGIN);
 
-            player.setGameMode(GameMode.SURVIVAL);
-            //activate AutoBlockGiver
-            Bukkit.broadcastMessage("Starting BlockGiver");
-            blockGiver = new BukkitRunnable() {
-                @Override
-                public void run() {
-                    for (Player player : Bukkit.getOnlinePlayers()) {
-                        player.getInventory().addItem(new ItemStack(Material.WHITE_WOOL));
+            player.setGameMode(GameMode.ADVENTURE); // Set to ADVENTURE mode to prevent block breaking
+            playerStartLocations.put(player, spawn.clone());
+        });
+
+        isCountdownActive = true;
+
+        // Register the movement cancellation listener
+        Bukkit.getPluginManager().registerEvents(new Listener() {
+            @EventHandler
+            public void onPlayerMove(PlayerMoveEvent event) {
+                if (isCountdownActive && playerStartLocations.containsKey(event.getPlayer())) {
+                    Location from = event.getFrom();
+                    Location to = event.getTo();
+                    if (from.getX() != to.getX() || from.getZ() != to.getZ()) {
+                        event.setTo(from);
                     }
                 }
+            }
+        }, plugin);
 
-            };
-            blockGiver.runTaskTimer(plugin, 0L, 20L); // 20L represents 20 ticks, which equals 1 second
-            //return false;
-            log.info("hi");
 
-        });
+        // Start countdown
+        new BukkitRunnable() {
+            int countdown = 5; // 5 second countdown
+
+            @Override
+            public void run() {
+                if (countdown > 0) {
+                    Bukkit.broadcastMessage("Game starts in " + countdown + " seconds!");
+                    countdown--;
+                } else {
+                    Bukkit.broadcastMessage("Game start!");
+                    isCountdownActive = false;
+                    startGame();
+                    this.cancel();
+                }
+            }
+        }.runTaskTimer(plugin, 0L, 20L);
+    }
+
+    private void startGame() {
+        for (Player player : getPlayerStates().keySet()) {
+            player.setGameMode(GameMode.SURVIVAL);
+        }
+
+        playerStartLocations.clear(); // Clear the stored locations
+
+        // Activate AutoBlockGiver
+        Bukkit.broadcastMessage("Starting BlockGiver");
+        blockGiver = new BukkitRunnable() {
+            @Override
+            public void run() {
+                for (Player player : Bukkit.getOnlinePlayers()) {
+                    player.getInventory().addItem(new ItemStack(Material.WHITE_WOOL));
+                }
+            }
+        };
+        blockGiver.runTaskTimer(plugin, 0L, 20L);
+
+        log.info("Game started");
     }
 
     private Location getLocationAwayFromOtherLocations(Iterable<Location> locations, Iterable<Player> players) {
