@@ -20,7 +20,7 @@ tasks {
 paper {
     name = "Scaffold"
     version = project.version.toString()
-    main = "com.mineplex.studio.scaffold.Scaffold"
+    main = "com.mineplex.studio.scaffold.OneBlockWarsPlugin"
     apiVersion = "1.20"
 
     serverDependencies {

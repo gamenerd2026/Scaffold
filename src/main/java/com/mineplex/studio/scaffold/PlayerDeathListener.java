@@ -22,5 +22,6 @@ public class PlayerDeathListener implements Listener {
 
         Bukkit.getScheduler().runTask(game.getPlugin(),
                 () -> game.setPlayerState(event.getPlayer(), BuiltInPlayerState.ELIMINATED));
+
     }
 }

@@ -25,10 +25,13 @@ import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 
@@ -42,6 +45,8 @@ import java.util.Map;
 @Slf4j
 public class OneBlockWars implements SingleWorldMineplexGame {
     private final JavaPlugin plugin;
+    private BukkitRunnable blockGiver; //test
+
 
     private final MineplexGameMechanicFactory gameMechanicFactory =
             MineplexModuleManager.getRegisteredModule(MineplexGameMechanicFactory.class);
@@ -84,6 +89,21 @@ public class OneBlockWars implements SingleWorldMineplexGame {
             player.teleport(spawn, PlayerTeleportEvent.TeleportCause.PLUGIN);
 
             player.setGameMode(GameMode.SURVIVAL);
+            //activate AutoBlockGiver
+            Bukkit.broadcastMessage("Starting BlockGiver");
+            blockGiver = new BukkitRunnable() {
+                @Override
+                public void run() {
+                    for (Player player : Bukkit.getOnlinePlayers()) {
+                        player.getInventory().addItem(new ItemStack(Material.WHITE_WOOL));
+                    }
+                }
+
+            };
+            blockGiver.runTaskTimer(plugin, 0L, 20L); // 20L represents 20 ticks, which equals 1 second
+            //return false;
+            log.info("hi");
+
         });
     }
 
@@ -135,7 +155,10 @@ public class OneBlockWars implements SingleWorldMineplexGame {
     private void onEnded() {
         MineplexModuleManager.getRegisteredModule(
                 MineplexGameModule.class).startNextGame();
+
     }
+
+
 
     @Override
     public MineplexWorld getGameWorld() {
@@ -218,19 +241,25 @@ public class OneBlockWars implements SingleWorldMineplexGame {
 
         gameWorldSelectorMechanic = this.gameMechanicFactory.construct(GameWorldSelectorMechanic.class);
 
-  //      gameWorldSelectorMechanic.setFilter(name -> !"lobby".equalsIgnoreCase(name));
+        gameWorldSelectorMechanic.setFilter(name -> !"lobby".equalsIgnoreCase(name));
         gameWorldSelectorMechanic.setup(this);
 
         stateHelperMechanic.setup(this);
 
         setGameState(BuiltInGameState.PRE_START);
     }
-
+    public void stopBlockGiver() {
+        if (blockGiver != null) {
+            blockGiver.cancel();
+            Bukkit.broadcastMessage("Stopped BlockGiver");
+        }
+    }
     @Override
     public void teardown() {
         stateHelperMechanic.teardown();
         gameWorldSelectorMechanic.teardown();
         spectatorMechanic.teardown();
+//        stopBlockGiver();
 
         for (Player player : getPlayerStates().keySet()) {
             cleanupPlayer(player);
@@ -248,6 +277,7 @@ public class OneBlockWars implements SingleWorldMineplexGame {
         player.clearActiveItem();
         player.setFallDistance(0);
         player.setInvulnerable(false);
+        stopBlockGiver();
     }
 
     public boolean tryStart(boolean force) {

@@ -13,6 +13,9 @@ import com.mineplex.studio.scaffold.OneBlockWars;
 import com.mineplex.studio.scaffold.StartCommand;
 import com.mineplex.studio.scaffold.CommandUtil;
 import lombok.Getter;
+import org.bukkit.Bukkit;
+import org.bukkit.GameMode;
+import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public class OneBlockWarsPlugin extends JavaPlugin {
@@ -36,29 +39,28 @@ public class OneBlockWarsPlugin extends JavaPlugin {
         lobbyModule = MineplexModuleManager.getRegisteredModule(LobbyModule.class);
         lobbyModule.setActiveLobby(lobbyModule.createBasicLobby(lobby));
         lobbyModule.setup();
+            gameModule = MineplexModuleManager.getRegisteredModule(MineplexGameModule.class);
+            gameModule.setGameCycle(new GameCycle() {
+                @Override
+                public MineplexGame createNextGame() {
+                    game = new OneBlockWars(OneBlockWarsPlugin.this);
+                    return game;
+                }
 
-        gameModule = MineplexModuleManager.getRegisteredModule(MineplexGameModule.class);
-        gameModule.setGameCycle(new GameCycle() {
-            @Override
-            public MineplexGame createNextGame() {
-                game = new OneBlockWars(OneBlockWarsPlugin.this);
-                return game;
-            }
+                @Override
+                public boolean hasNextGame() {
+                    return true;
+                }
+            });
 
-            @Override
-            public boolean hasNextGame() {
-                return true;
-            }
-        });
+            gameModule.startNextGame();
 
-        gameModule.startNextGame();
+            CommandUtil.register(new StartCommand(gameModule));
+        }
 
-        CommandUtil.register(new StartCommand(gameModule));
-    }
-
-    @Override
-    public void onDisable() {
-        gameModule.teardown();
-        lobbyModule.teardown();
-    }
+        @Override
+        public void onDisable () {
+            gameModule.teardown();
+            lobbyModule.teardown();
+        }
 }
